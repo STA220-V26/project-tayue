@@ -12,3 +12,5 @@ Maybe we can focus to compare if the total medical coast of Acute Bronchitis is 
 #what is the distribution of healthcare expenses across income?
 #What is the average base cost for patients with this diagnosis?
 #Regression analysis
+
+Ok, if you can work on the codes we can proceed with it. I have just uploaded the prliminary analyiss codes for the healthcare coverage and utilization. We can decide later if both are finished. 
