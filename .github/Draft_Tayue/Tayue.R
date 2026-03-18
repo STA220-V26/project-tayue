@@ -1,5 +1,5 @@
 
-# Q2: Does the medication coast differ for the genders?
+# Q2: Does the medication cost differ for the genders?
 library(data.table)
 library(dplyr)
 
@@ -52,4 +52,12 @@ med_cost_model <- glm(
 summary(med_cost_model)
 
 
-# Q4 
+# Q4: What is the average base cost for patients with this diagnosis?
+avg_base_cost <- analysis_data |>
+  summarise(
+    avg_base_cost = mean(base_cost, na.rm = TRUE),
+    median_base_cost = median(base_cost, na.rm = TRUE),
+    n_encounters = n()
+  )
+
+print(avg_base_cost)

@@ -16,3 +16,8 @@ Maybe we can focus to compare if the total medical coast of Acute Bronchitis is 
 Ok, if you can work on the codes we can proceed with it. I have just uploaded the prliminary analyiss codes for the healthcare coverage and utilization. We can decide later if both are finished. 
 
 i have a code suggestion were i do some descriptive data for this which are in Tova.R as written above! 
+
+
+I have finshed with codes for Q2 and Q4. See uder Draft_Tayue 
+
+Title suggesion: Healthcare cost burden of acute bronchitis 
