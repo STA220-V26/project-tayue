@@ -1,23 +1,22 @@
 
 #Plots for the result 
+dir.create("Results", showWarnings = FALSE)
 
 #plot for total coast differences between the genders 
 plot1 <- ggplot(data_linked, aes(x = gender, y = totalcost)) +
   geom_boxplot()
 plot1
 
-dir.create("Results", showWarnings = FALSE)
+
 ggsave("Results/gender_boxplot.png", plot = plot1, width = 8, height = 6)
 
 #total average cost for the condition plot 
-library(knitr)
-summary_table_totalcost <- data_linked |>
-  summarise(
-    sum_total_cost = sum(totalcost, na.rm = TRUE),
-    average_total_cost = mean(totalcost, na.rm = TRUE)
-  )
 
-kable(summary_table_totalcost, caption = "Summary of total medication cost")
+
+
+
+
+
 
 #income vs healtcare expenses 
 ggplot(data_linked, ases=income, y=healthcare_expenses) + 

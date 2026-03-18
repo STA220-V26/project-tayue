@@ -1,6 +1,6 @@
 
 
-#SET-UP to download the data we want to use and to place the data in git-ignore 
+##SET-UP to download the data we want to use and to place the data in git-ignore 
 
  #Load essential librarys to be used
 library(janitor)
@@ -30,6 +30,7 @@ if (!fs::file_exists("data/data.zip")) {
 }
 #Unzipping the data using targets as used in the lectures
 #tar target is to define a step in the pipeline
+
  list(tar_target(zipdata,"../data/data.zip", format = "file" #define a target to replace the zip file
   ),
  tar_target(csv_files, zip::unzip(zipdata, exdir = "../data"),format = "file" #unzipping the file 
@@ -43,3 +44,4 @@ if (!fs::file_exists("data/data.zip")) {
 zip_file <- "data/data.zip"
 extract_to <- "data"
 zip::unzip(zip_file, exdir = extract_to)
+

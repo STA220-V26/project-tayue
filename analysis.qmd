@@ -1,5 +1,6 @@
 title: "Acute Bronchitis Cost Analysis"
 format: html
+df-print:kable
 execute: 
   echo: true
   warning: false
@@ -26,6 +27,7 @@ library(targets)
 library(tarchetypes)
 library(labelled)
 library(knitr)
+library(gt)
 ``` 
 
 ```qmd
@@ -35,18 +37,19 @@ Starting with looking at the linked data file and the variables we are about to 
 
  ```{r} 
 colnames(data_linked)
+
 ``` 
 
 ```qmd
 What is the average medication cost for all individuals with the diagnostis and the total medication cost?
+```
 
-summary table for total cost 
-``` 
 ```{r}
+
 summary_table_totalcost <- data_linked |>
   summarise(
-    sum_total_cost = sum(data_linked$totalcost, na.rm = TRUE),
-    average_total_cost = mean(data_linked$totalcost, na.rm = TRUE)
+    `Sum of Total Cost` = round(sum(totalcost, na.rm = TRUE), 2),
+    `Average Total Cost` = round(mean(totalcost, na.rm = TRUE), 2)
   )
 
 kable(summary_table_totalcost, caption = "Summary of total medication cost")
@@ -54,6 +57,7 @@ kable(summary_table_totalcost, caption = "Summary of total medication cost")
 
 ```qmd
 How much does the total medication cost differ between genders?
+![](Results/gender_boxplot.png) 
 ``` 
 
 ```{r}
