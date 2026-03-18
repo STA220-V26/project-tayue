@@ -1,16 +1,16 @@
+---
 title: "Acute Bronchitis Cost Analysis"
 format: html
-df-print:kable
-execute: 
+df-print: kable
+execute:
   echo: true
   warning: false
   message: false
 ---
 
-##Introduction 
-This report primalry investigates wheter total medication coast for Acute bronchitis differs for males and females, 
-we will also cover subanalysis of the average medication coast, the distribution of healthcare expenses across income and the average base cost. 
+## Introduction
 
+This report primarily investigates whether the total medication cost for acute bronchitis differs between males and females. It also includes a subanalysis of the average medication cost, the distribution of healthcare expenses across income, and the average base cost.
 
 ## Load packages
 
@@ -23,29 +23,93 @@ library(data.table)
 library(zip)
 library(rvest)
 library(fs)
-library(targets)
-library(tarchetypes)
-library(labelled)
 library(knitr)
 library(gt)
-``` 
-
-```qmd
-Starting with looking at the linked data file and the variables we are about to work with
-``` 
-
-
- ```{r} 
-colnames(data_linked)
-
-``` 
-
-```qmd
-What is the average medication cost for all individuals with the diagnostis and the total medication cost?
+library(curl)
 ```
 
-```{r}
+## Data preparation
 
+Reading in the data and performing data linking and data cleaning.
+
+```{r}
+fs::dir_create("data")
+
+if (!fs::file_exists("data/data.zip")) {
+  curl::curl_download(
+    "https://github.com/STA220/cs/raw/refs/heads/main/data.zip",
+    "data/data.zip",
+    quiet = FALSE
+  )
+}
+
+if (!fs::dir_exists("data/data-fixed")) {
+  zip::unzip("data/data.zip", exdir = "data")
+}
+
+pat_data <- fread("data/data-fixed/patients.csv")
+con_data <- fread("data/data-fixed/conditions.csv")
+med_data <- fread("data/data-fixed/medications.csv")
+
+patient <- pat_data |>
+  select(id, gender, healthcare_expenses, healthcare_coverage, income) |>
+  drop_na()
+
+conditions <- con_data |>
+  select(start, stop, patient, code, description) |>
+  drop_na()
+
+medications <- med_data |>
+  select(reasoncode, start, stop, patient, description, base_cost, payer_coverage, dispenses, totalcost, reasondescription) |>
+  drop_na()
+
+conditions <- conditions |>
+  rename(
+    start_con = start,
+    stop_con = stop,
+    description_con = description
+  )
+
+medications <- medications |>
+  rename(
+    start_med = start,
+    stop_med = stop,
+    description_med = description
+  )
+
+conditions$start_con <- as.Date(conditions$start_con)
+conditions$stop_con <- as.Date(conditions$stop_con)
+medications$start_med <- as.Date(medications$start_med)
+medications$stop_med <- as.Date(medications$stop_med)
+
+conditions <- conditions |>
+  filter(code == 10509002)
+
+medications <- medications |>
+  filter(reasoncode == 10509002)
+
+patient_conditions <- conditions |>
+  left_join(patient, by = c("patient" = "id"))
+
+data_linked <- patient_conditions |>
+  inner_join(medications, by = "patient") |>
+  filter(
+    code == reasoncode,
+    start_med == start_con,
+    stop_med == stop_con
+  )
+
+data_linked$income <- as.numeric(data_linked$income)
+data_linked$gender <- factor(data_linked$gender, levels = c("M", "F"))
+
+fwrite(data_linked, "data/data_linked.csv")
+```
+
+## Average medication cost
+
+What is the average medication cost for all individuals with the diagnosis, and what is the total medication cost?
+
+```{r}
 summary_table_totalcost <- data_linked |>
   summarise(
     `Sum of Total Cost` = round(sum(totalcost, na.rm = TRUE), 2),
@@ -53,87 +117,90 @@ summary_table_totalcost <- data_linked |>
   )
 
 kable(summary_table_totalcost, caption = "Summary of total medication cost")
-``` 
+```
 
-```qmd
+## Total medication cost by gender
+
 How much does the total medication cost differ between genders?
-![](Results/gender_boxplot.png) 
-``` 
 
 ```{r}
-#Distribution of genders 
-plot1 <- ggplot(data_linked, aes(x = gender, y = totalcost)) +
-  geom_boxplot()
-plot1
-
-``` 
-
-```qmd
-what is the distribution of healthcare expenses across income?
-
-The figure below shos the realationship between income and healtcare expenses 
-``` 
-```{r}
-ggplot(data_linked, aes(x=income, y=healthcare_expenses)) + 
-    geom_point() + 
-    labs(
-        x="Income",
-        y= "Healtcare expenses",
-        title = "Healtcare expenses vs income "
-    )
-
-``` 
-```qmd
-Distribution of healtcare expenses 
-``` 
-```{r}
-ggplot(data_linked, aes(x=healthcare_expenses)) + 
-    geom_histogram(bins=30) +
-    labs(
-        title= "Distribution of healthcare expenses cost for persons with Acute bronchitis",
-        x="Total Medication cost",
-        y="counts"
-    ) + 
-        theme_minimal()
-``` 
-
-```qmd
- Distribution of income
-``` 
-```{r}
-ggplot(data_linked, aes(x=income)) + 
-    geom_histogram(bins=30) +
-    labs(
-        title= "Distribution of income",
-        x="income",
-        y="counts"
-    ) + 
-        theme_minimal()
+ggplot(data_linked, aes(x = gender, y = totalcost)) +
+  geom_boxplot() +
+  labs(
+    title = "Total Medication Cost by Gender",
+    x = "Gender",
+    y = "Total Medication Cost"
+  ) +
+  theme_minimal()
 ```
 
-```qmd
- oxplots 
+## Healthcare expenses across income
+
+What is the distribution of healthcare expenses across income?
+
+The figure below shows the relationship between income and healthcare expenses.
+
+```{r}
+ggplot(data_linked, aes(x = income, y = healthcare_expenses)) +
+  geom_point() +
+  labs(
+    x = "Income",
+    y = "Healthcare Expenses",
+    title = "Healthcare Expenses vs Income"
+  ) +
+  theme_minimal()
+```
+
+## Distribution of healthcare expenses
+
+```{r}
+ggplot(data_linked, aes(x = healthcare_expenses)) +
+  geom_histogram(bins = 30) +
+  labs(
+    title = "Distribution of Healthcare Expenses for Individuals with Acute Bronchitis",
+    x = "Healthcare Expenses",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Distribution of income
+
+```{r}
+ggplot(data_linked, aes(x = income)) +
+  geom_histogram(bins = 30) +
+  labs(
+    title = "Distribution of Income",
+    x = "Income",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Boxplots
+
+```{r}
+ggplot(data_linked, aes(y = healthcare_expenses)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot of Healthcare Expenses",
+    y = "Healthcare Expenses"
+  ) +
+  theme_minimal()
 ```
 
 ```{r}
-ggplot(data_linked, aes(y=healthcare_expenses)) +
-    geom_boxplot() +
-    labs(
-    y="Boxplot of Healtcare expenses") +
-        theme_minimal()
+ggplot(data_linked, aes(y = income)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot of Income",
+    y = "Income"
+  ) +
+  theme_minimal()
+```
 
-    ggplot(data_linked, aes(y=income)) +
-    geom_boxplot() +
-    labs(
-    y="Boxplot of income") +
-        theme_minimal()
-``` 
+## Interpretation
 
-```qmd
-we can detect that the data is heavenly right-tailed for both the income and the healtcare expenses. The distribution is skewed possibly becuase we have a lot of outliers, 
-meaning that some individuals has high values and that higly affects the distribution. income may influence healtcare expenses becuase different incomes may cuase different acces to care and different oportunities for which medications a person can get. 
-Healcare expenses may also directly contribute to the total coast of the disease. 
+We can observe that both income and healthcare expenses are strongly right skewed. This suggests the presence of high value observations that affect the overall distribution. Income may influence healthcare expenses because differences in income can affect access to care and medication choices. Healthcare expenses may also contribute directly to the total cost of the disease.
 
-Overall the results suggest that income and healtcare expenses might influence the total cost
-``` 
-
+Overall, the results suggest that income and healthcare expenses may influence the total medication cost for acute bronchitis.

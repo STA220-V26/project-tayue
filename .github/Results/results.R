@@ -14,10 +14,6 @@ ggsave("Results/gender_boxplot.png", plot = plot1, width = 8, height = 6)
 
 
 
-
-
-
-
 #income vs healtcare expenses 
 ggplot(data_linked, ases=income, y=healthcare_expenses) + 
     geom_point() + 
@@ -62,3 +58,7 @@ ggplot(data_linked, aes(y=healtcare_expenses)) +
     labs(
     y="Boxplot of income") +
         theme_minimal()
+
+
+#results from the qmd to the html 
+quarto::quarto_render("analysis.qmd")
