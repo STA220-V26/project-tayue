@@ -3,7 +3,7 @@
 library(data.table)
 library(dplyr)
 
-analysis_data <- fread("data_linked.csv")
+analysis_data <- fread("data/data_linked.csv")
 head(analysis_data)
 str(analysis_data)
 
@@ -16,7 +16,7 @@ analysis_data <- analysis_data |>
     )
   )
 analysis_data <- analysis_data |>
-  group_by(patient, gender, age, income_quintile) |>
+  group_by(patient, gender, income_quintile) |>
   summarise(
     total_medical_cost = sum(totalcost, na.rm = TRUE),
     base_cost = sum(base_cost, na.rm = TRUE),
@@ -47,3 +47,5 @@ data = analysis_data
 )
 
 summary(med_cost_model)
+
+unique(analysis_data$gender)
