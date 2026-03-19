@@ -1,4 +1,7 @@
 
+#in this document i have made some more nice formats for the plots that i use in the Quatro representation, all based on our anlysis scripts. 
+
+
 #Plots for the result 
 dir.create("Results", showWarnings = FALSE)
 
@@ -10,8 +13,45 @@ plot1
 
 ggsave("Results/gender_boxplot.png", plot = plot1, width = 8, height = 6)
 
-#total average cost for the condition plot 
+med_cost_summary <- analysis_data |>
+  group_by(gender) |>
+  summarise(
+    avg_med_cost = mean(total_medical_cost, na.rm = TRUE),
+    median_med_cost = median(total_medical_cost, na.rm = TRUE),
+    n_patients = n(),
+    .groups = "drop"
+  )
 
+med_cost_summary |>
+  mutate(
+    avg_med_cost = round(avg_med_cost, 2),
+    median_med_cost = round(median_med_cost, 2)
+  ) |>
+  knitr::kable(
+    col.names = c("Gender", "Average medical cost", "Median medical cost", "Number of patients"),
+    caption = "Summary of total medical cost by gender"
+  )
+
+#Nice format for the summary model of the regression about gender and the income quantiles on the total cost. 
+model_sum <- summary(med_cost_model)
+model_summary_table <- data.frame(
+  Term= rownames(model_sum$coefficients), 
+  Estimate= model_sum$coefficients[,1], 
+  Std_Error = model_sum$coefficients[,2],
+  z_value = model_sum$coefficients[,3],
+  p_value=model_sum$coefficients[,4]
+)
+
+model_summary_table$Estimate <- round(model_summary_table$Estimate, 3)
+model_summary_table$Std_Error <- round(model_summary_table$Std_Error, 3)
+model_summary_table$z_value <- round(model_summary_table$z_value, 3)
+model_summary_table$p_value <- round(model_summary_table$p_value, 4)
+
+knitr::kable(
+  model_summary_table,
+  col.names = c("Name", "Estimate", "Std. Error", "z value", "p-value"),
+  caption = "Regression model for the effect of gender and income on total cost"
+)
 
 
 #income vs healtcare expenses 
