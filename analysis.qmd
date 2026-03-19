@@ -121,9 +121,9 @@ The total and the average cost for the medications are shown below
 ```{r}
 summary_table_totalcost <- data_linked |>
   summarise(
-    Sum of Total Cost` = round(sum(totalcost, na.rm = TRUE), 2),
-    Average Total Cost` = round(mean(totalcost, na.rm = TRUE), 2),
-    Average base cost = round(mean(base_cost, na.rm=TRUE),2)
+    `Sum of total` = round(sum(totalcost, na.rm = TRUE), 2),
+    `Average total cost` = round(mean(totalcost, na.rm = TRUE), 2),
+    `Average base cost` = round(mean(base_cost, na.rm=TRUE),2)
 
   )
 
@@ -147,7 +147,34 @@ ggplot(data_linked, aes(x = gender, y = totalcost)) +
     y = "Total Medication Cost"
   ) +
   theme_minimal()
+```
 
+```{r}
+analysis_data <- fread("data/data_linked.csv")
+
+# Creating income quintile
+analysis_data <- analysis_data |>
+  mutate(
+    income_quintile = factor(
+      ntile(income, 5),
+      levels = 1:5,
+      labels = c("Lowest", "Low-Middle", "Middle", "High-Middle", "Highest")
+    )
+  )
+
+# Aggregate to Patient Level
+analysis_data <- analysis_data |>
+  group_by(patient, gender, income_quintile) |>
+  summarise(
+    total_medical_cost = sum(totalcost, na.rm = TRUE),
+    base_cost = sum(base_cost, na.rm = TRUE),
+    payer_coverage = sum(payer_coverage, na.rm = TRUE),
+    n_encounters = n(),
+    .groups = "drop"
+  )
+```
+
+```{r}
 med_cost_summary <- analysis_data |>
   group_by(gender) |>
   summarise(
@@ -167,6 +194,20 @@ med_cost_summary |>
     caption = "Table of total medical cost by gender"
   )
 
+```
+
+```{r}
+#  Regression: medication cost as outcome ---
+med_cost_model <- glm(
+  total_medical_cost ~ gender + income_quintile, 
+  family = Gamma(link = "log"), 
+  data = analysis_data |> filter(total_medical_cost > 0)
+)
+
+summary(med_cost_model)
+```
+
+```{r}
 model_sum <- summary(med_cost_model)
 model_summary_table <- data.frame(
   Term= rownames(model_sum$coefficients), 
