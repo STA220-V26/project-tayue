@@ -8,3 +8,4 @@ i have started to work with the data and try to analyse the data: i have some su
 i have worked on the script named Tova.R were you can find some overwiev of the data and the questions. 
 i have viewed the data, i have done some summary statistics and started with a regression analysis as well. 
 i have strated to work with the quatro file and i did create first a qmd. file and the convertet it into html. it dosent look so good when i push to git but it dose look nice in my viwer?
+i have summarized all results and made nice plots and written a summary in a Quatro document and converted it to a HTML. 
