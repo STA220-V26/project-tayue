@@ -81,7 +81,7 @@ boxplot(data_linked$healthcare_expenses)
 
 
 #Do income and healthcare expenses significantly predict total disease cost?
-model1<-lm(log(totalcost) ~ log(income) + log(healthcare_expenses) , data =data_linked)
+model1<-glm(log(totalcost) ~ log(income) + log(healthcare_expenses) , data =data_linked)
 
 plot(model1, which = 1) #residual vs fitted 
 plot(model1, which = 2) #normality

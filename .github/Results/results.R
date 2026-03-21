@@ -1,5 +1,6 @@
 
-#in this document i have made some more nice formats for the plots that i use in the Quatro representation, all based on our anlysis scripts. 
+#In this document i have made some more nice formats for the plots that i use in the Quatro representation, all based on our anlysis scripts.
+# trying to use ggplot based graphs and kable for the tables as recomended for qautro format 
 
 
 #Plots for the result 
@@ -54,29 +55,48 @@ knitr::kable(
 )
 
 
-#income vs healtcare expenses 
+#Income vs healtcare expenses 
 ggplot(data_linked, ases=income, y=healthcare_expenses) + 
     geom_point() + 
     labs(
-        x="Income",
-        y= "Healtcare expenses",
-        title = "Healtcare expenses vs income "
+    x="Income",
+    y= "Healtcare expenses",
+    title = "Healtcare expenses vs income "
     )
 
-## Distribution of total medication cost
+#Income quantiles 
+# Creating income quintile
+analysis_data <- analysis_data |>
+  mutate(
+    income_quintile = factor(
+      ntile(income, 5),
+      levels = 1:5,
+      labels = c("Lowest", "Low-Middle", "Middle", "High-Middle", "Highest")
+    )
+  )
+#dist of total coast across income quantiles 
+ggplot(analysis_data, aes(x=income_quintile, y=total_medical_cost),
+geom_boxplot() +
+  title= "Distribution of the total medical cost across income groups",
+x="Income groups",
+y="Total medical cost"
+) + 
+  theme_minimal ()
 
+
+#Distribution of total medication cost
 
 ggplot(data_linked, aes(X=totalcost)) + 
     geom_histogram(bins=30) +
     labs(
-        title= "Distribution of Total medication cost for Acute bronchitis",
-        x="Total Medication cost",
-        y="counts",
+    title= "Distribution of Total medication cost for Acute bronchitis",
+    x="Total Medication cost",
+  y="counts",
     ) + 
-        theme_minimal
+  theme_minimal ()
 
    
-## Distribution of income
+#Distribution of income
 
 ggplot(data_linked, aes(X=income)) + 
     geom_histogram(bins=30) +
@@ -85,7 +105,7 @@ ggplot(data_linked, aes(X=income)) +
         x="income",
         y="counts",
     ) + 
-        theme_minimal
+        theme_minimal ()
 
 ggplot(data_linked, aes(y=healtcare_expenses)) +
     geom_boxplot() +
