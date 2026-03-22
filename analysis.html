@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Acute Bronchitis Cost Analysis</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="analysis_files/libs/clipboard/clipboard.min.js"></script>
+<script src="analysis_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="analysis_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="analysis_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="analysis_files/libs/quarto-html/popper.min.js"></script>
+<script src="analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="analysis_files/libs/quarto-html/anchor.min.js"></script>
+<link href="analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="analysis_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="analysis_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="analysis_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Acute Bronchitis Cost Analysis</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Acute bronchitis is one of the most common respiratory infections, typically caused by viral pathogens, though bacterial etiologies may occur less frequently. It is characterized by inflammation of the bronchial tubes and commonly presents with cough, sputum production, and mild systemic symptoms. Despite its generally self-limiting course, acute bronchitis contributes substantially to the burden on healthcare systems due to its high incidence and frequent healthcare utilization (1-3). The associated healthcare expenditure represents an important aspect that needs closer attention. In particular, understanding direct medical costs can provide a clearer picture of the economic impact of the condition and help identify inefficiencies in resource use and treatment practices (4,5). Thus, this study examines the healthcare cost burden of acute bronchitis with a specific focus on medication expenditures and overall baseline healthcare costs among diagnosed individuals. It evaluates the average medication cost per patient and investigates whether these costs differ by gender, thereby highlighting potential disparities in treatment patterns. Additionally, the analysis explores the distribution of total healthcare expenses across income groups, offering insight into socioeconomic inequalities in healthcare utilization and financial burden.</p>
+</section>
+<section id="load-packages" class="level2">
+<h2 class="anchored" data-anchor-id="load-packages">Load packages</h2>
+</section>
+<section id="data-preparation" class="level2">
+<h2 class="anchored" data-anchor-id="data-preparation">Data preparation</h2>
+<p>A file for the data was created to store all the data and to be sure that no sensitive data were tracked by git.<br>
+The data was collected from multiple files. Data linking was peformed to be able to construct the analysis by combining 3 data sets in total. We started to create a new data frame that only had the columns of interest. The columns most interesting for our analysis was for instance gender, total cost, healthcare expences and coverage, payer coverage, base cost and income. After the new data frame was created it was also placed under gitignore to not be tracked by git. After the neccessary columns was created we filtered only on the condition code present in both medication and condition file to be able to only get the results from a certain condition. We did also join patients “id” from patients file and “patients” from condition file.The condition that we filtered on was Acute bronchitis. We did also peform some data cleaning including dropping missing values and making choore the variables was in the correct format.</p>
+<p>The main considerations for the data linking were that we must know the condition start date and and date for the patients, the medication period for that condition must lie within start date and end date for the actual condition period. Without it medication could have been given before or after diagnosis. We did also filter on medical code for the condition and for the reason code for the prescription of the medicine to make choore that the medicine were linked to the actual condition. The two medicines linked to the condition were: 1. Acetaminophen 325 MG Oral Tablet<br>
+2. “Acetaminophen 21.7 MG/ML / Dextromethorphan Hydrobromide 1 MG/ML / doxylamine succinate 0.417 MG/ML Oral Solution”</p>
+<p>These are the medications that will be shown as the Total medication cost.</p>
+</section>
+<section id="average-medication-cost-and-base-cost" class="level2">
+<h2 class="anchored" data-anchor-id="average-medication-cost-and-base-cost">Average medication cost and base cost</h2>
+<p>The fisrt question we want to look at is the average medication cost for all individuals that has the condition. We have a total 12 006 individuals that did had the confirmed condition. What is the average medication cost for all individuals with the diagnosis, and what is the total medication cost?</p>
+<p>The total and the average cost for the medications are shown below</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Summary of total medication cost</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Sum of total</th>
+<th style="text-align: right;">Average total cost</th>
+<th style="text-align: right;">Average base cost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2466305</td>
+<td style="text-align: right;">205.42</td>
+<td style="text-align: right;">205.42</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="total-medication-cost-by-gender" class="level2">
+<h2 class="anchored" data-anchor-id="total-medication-cost-by-gender">Total medication cost by gender</h2>
+<p>How much does the total medication cost differ between genders? We did a simple visualization and a table summary of some summary statistics. The average cost for male and females are quiet similar but the median cost differ more. A two-samle t-test were peformed to look at the differences in total cost between the genders. The test generated a p-value of p=0.189 so no statistically significant result thattotal medical cost differ by gender were found. Income was devided into 5 groups, which were people with lowst income to the highest, the levels were: Lowest, Low-middle, Middle, High-Middle and Highest. And each person assigned into one of the five categories. A regression model with the Gamma distribution were peformed to look at the the effect that gender and the income has on total medication cost. No significant results were found. The Gamma regression were choosen since the data are right-skewed and heteroscedacity problems handeled. Gamma regression were considered to be appropiate for health economics data.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Table of total medical cost by gender</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gender</th>
+<th style="text-align: right;">Average medical cost</th>
+<th style="text-align: right;">Median medical cost</th>
+<th style="text-align: right;">Number of patients</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">F</td>
+<td style="text-align: right;">500.72</td>
+<td style="text-align: right;">398.45</td>
+<td style="text-align: right;">2449</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">M</td>
+<td style="text-align: right;">515.18</td>
+<td style="text-align: right;">422.53</td>
+<td style="text-align: right;">2407</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = total_medical_cost ~ gender + income_quintile, 
+    family = Gamma(link = "log"), data = filter(analysis_data, 
+        total_medical_cost &gt; 0))
+
+Coefficients:
+                           Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)                 6.21754    0.02642 235.326   &lt;2e-16 ***
+genderM                     0.02856    0.02167   1.318    0.188    
+income_quintileLow-Middle   0.03871    0.03429   1.129    0.259    
+income_quintileMiddle       0.01208    0.03434   0.352    0.725    
+income_quintileHigh-Middle -0.01335    0.03427  -0.390    0.697    
+income_quintileHighest     -0.04675    0.03425  -1.365    0.172    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for Gamma family taken to be 0.5693447)
+
+    Null deviance: 3093.0  on 4855  degrees of freedom
+Residual deviance: 3088.1  on 4850  degrees of freedom
+AIC: 69520
+
+Number of Fisher Scoring iterations: 5</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Regression model for the effect of gender and income on total cost</caption>
+<colgroup>
+<col style="width: 30%">
+<col style="width: 30%">
+<col style="width: 10%">
+<col style="width: 12%">
+<col style="width: 8%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: left;">Name</th>
+<th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Std. Error</th>
+<th style="text-align: right;">z value</th>
+<th style="text-align: right;">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: right;">6.218</td>
+<td style="text-align: right;">0.026</td>
+<td style="text-align: right;">235.326</td>
+<td style="text-align: right;">0.0000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">genderM</td>
+<td style="text-align: left;">genderM</td>
+<td style="text-align: right;">0.029</td>
+<td style="text-align: right;">0.022</td>
+<td style="text-align: right;">1.318</td>
+<td style="text-align: right;">0.1876</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">income_quintileLow-Middle</td>
+<td style="text-align: left;">income_quintileLow-Middle</td>
+<td style="text-align: right;">0.039</td>
+<td style="text-align: right;">0.034</td>
+<td style="text-align: right;">1.129</td>
+<td style="text-align: right;">0.2590</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">income_quintileMiddle</td>
+<td style="text-align: left;">income_quintileMiddle</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: right;">0.034</td>
+<td style="text-align: right;">0.352</td>
+<td style="text-align: right;">0.7250</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">income_quintileHigh-Middle</td>
+<td style="text-align: left;">income_quintileHigh-Middle</td>
+<td style="text-align: right;">-0.013</td>
+<td style="text-align: right;">0.034</td>
+<td style="text-align: right;">-0.390</td>
+<td style="text-align: right;">0.6969</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">income_quintileHighest</td>
+<td style="text-align: left;">income_quintileHighest</td>
+<td style="text-align: right;">-0.047</td>
+<td style="text-align: right;">0.034</td>
+<td style="text-align: right;">-1.365</td>
+<td style="text-align: right;">0.1723</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="healthcare-expenses-across-income" class="level2">
+<h2 class="anchored" data-anchor-id="healthcare-expenses-across-income">Healthcare expenses across income</h2>
+<p>The next question that we want to adress is what is the distribution of healthcare expenses across total income? This is relevant since the income is often related to healthcare spendings and how much people can spend on medication. People that has different incomes may have different access to care and may delay some expensive cost. Sine Acute bronchitis is a severe condition if the symptom releving medications are not taken it can lead to other consequences. Below we showing some ditribution of the variables and how we could confirm that the data are right-skewed.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="distribution-of-healthcare-expenses" class="level2">
+<h2 class="anchored" data-anchor-id="distribution-of-healthcare-expenses">Distribution of healthcare expenses</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="distribution-of-income" class="level2">
+<h2 class="anchored" data-anchor-id="distribution-of-income">Distribution of income</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="boxplots" class="level2">
+<h2 class="anchored" data-anchor-id="boxplots">Boxplots</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="interpretation" class="level2">
+<h2 class="anchored" data-anchor-id="interpretation">Interpretation</h2>
+<p>We can observe that both income and healthcare expenses are strongly right skewed. This suggests the presence of high value observations that affect the overall distribution. So most people may have low or moderate values but since some people have very high values or outliers this will create the long-tailed distribution. Income may influence healthcare expenses because differences in income can affect access to care and medication choices. Healthcare expenses may also contribute directly to the total cost of the disease. Overall, the results suggest that income and healthcare expenses may influence the total medication cost for acute bronchitis.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>This anlysis did aim to examine how the total medical cost for the condition of Acute Bronchits did differ for genders, and also some other subquestions about income and average cost. Total medication cost was summarized by gender and a t-test were peformed. We could not see any statistical significant differences between the genders. Income was also devided into 5 groups this allowed healthcare expenses to be compared across people with different incomes. Regression model for the effect of gender and income were fitted but no results that show any evidence of effect. As a conclussion we could not find any statistically significant differences between the genders or income for the medication cost of Acute Bronchitis.</p>
+<p>Refrences</p>
+<p>1.Wenzel RP. Acute Bronchitis and Tracheitis. Goldman’s Cecil Medicine. 2012:586–7. doi: 10.1016/B978-1-4377-1604-7.00096-8. Epub 2012 May 8. PMCID: PMC7151881.</p>
+<p>2.Singh A, Avula A, Zahn E. Acute Bronchitis. [Updated 2024 Mar 9]. In: StatPearls [Internet]. Treasure Island (FL): StatPearls Publishing; 2026 Jan-. Available from: https://www.ncbi.nlm.nih.gov/books/NBK448067/</p>
+<p>3.World Health Organization (7 January 2025). Disease Outbreak News; Trends of acute respiratory infection, including human metapneumovirus, in the Northern Hemisphere. Available at: https://www.who.int/emergencies/disease-outbreak-news/item/2025-DON550</p>
+<p>4.Pritchard D, Petrilla A, Hallinan S, Taylor DH Jr, Schabert VF, Dubois RW. What Contributes Most to High Health Care Costs? Health Care Spending in High Resource Patients. J Manag Care Spec Pharm. 2016 Feb;22(2):102-9. doi: 10.18553/jmcp.2016.22.2.102. PMID: 27015249; PMCID: PMC10397786.</p>
+<p>5.Scott RD 2nd, Culler SD, Rask KJ. Understanding the Economic Impact of Health Care-Associated Infections: A Cost Perspective Analysis. J Infus Nurs. 2019 Mar/Apr;42(2):61-69. doi: 10.1097/NAN.0000000000000313. PMID: 30817421; PMCID: PMC12239992.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

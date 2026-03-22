@@ -1,0 +1,322 @@
+---
+title: "Acute Bronchitis Cost Analysis"
+format: html
+df-print: kable
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Introduction
+Acute bronchitis is one of the most common respiratory infections, typically caused by viral pathogens, though bacterial etiologies may occur less frequently. It is characterized by inflammation of the bronchial tubes and commonly presents with cough, sputum production, and mild systemic symptoms. Despite its generally self-limiting course, acute bronchitis contributes substantially to the burden on healthcare systems due to its high incidence and frequent healthcare utilization (1-3). The associated healthcare expenditure represents an important aspect that needs closer attention. In particular, understanding direct medical costs can provide a clearer picture of the economic impact of the condition and help identify inefficiencies in resource use and treatment practices (4,5). Thus, this study examines the healthcare cost burden of acute bronchitis with a specific focus on medication expenditures and overall baseline healthcare costs among diagnosed individuals. It evaluates the average medication cost per patient and investigates whether these costs differ by gender, thereby highlighting potential disparities in treatment patterns. Additionally, the analysis explores the distribution of total healthcare expenses across income groups, offering insight into socioeconomic inequalities in healthcare utilization and financial burden.
+
+## Load packages
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(janitor)
+library(tidyverse)
+library(data.table)
+library(zip)
+library(rvest)
+library(fs)
+library(knitr)
+library(gt)
+library(curl)
+```
+
+## Data preparation
+A file for the data was created to store all the data and to be sure that no sensitive data were tracked by git.  
+The data was collected from multiple files. Data linking was peformed to be able to construct the analysis by combining 3 data sets in total. We started to create a new data frame that only had the columns of interest. The columns most interesting for our analysis was for instance gender, total cost, healthcare expences and coverage, payer coverage, base cost and income. After the new data frame was created it was also placed under gitignore to not be tracked by git. After the neccessary columns was created we filtered only on the condition code present in both medication and condition file to be able to only get the results from a certain condition. We did also join patients "id" from patients file and "patients" from condition file.The condition that we filtered on was Acute bronchitis. We did also peform some data cleaning including dropping missing values and making choore the variables was in the correct format. 
+
+The main considerations for the data linking were that we must know the condition start date and and date for the patients, the medication period for that condition must lie within start date and end date for the actual condition period. Without it medication could have been given before or after diagnosis. We did also filter on medical code for the condition and for the reason code for the prescription of the medicine to make choore that the medicine were linked to the actual condition. The two medicines linked to the condition were: 
+1. Acetaminophen 325 MG Oral Tablet                                                                                  
+2. "Acetaminophen 21.7 MG/ML / Dextromethorphan Hydrobromide 1 MG/ML / doxylamine succinate 0.417 MG/ML Oral Solution"
+
+These are the medications that will be shown as the Total medication cost. 
+
+ 
+
+```{r}
+fs::dir_create("data")
+
+if (!fs::file_exists("data/data.zip")) {
+  curl::curl_download(
+    "https://github.com/STA220/cs/raw/refs/heads/main/data.zip",
+    "data/data.zip",
+    quiet = FALSE
+  )
+}
+
+if (!fs::dir_exists("data/data-fixed")) {
+  zip::unzip("data/data.zip", exdir = "data")
+}
+
+pat_data <- fread("data/data-fixed/patients.csv")
+con_data <- fread("data/data-fixed/conditions.csv")
+med_data <- fread("data/data-fixed/medications.csv")
+
+patient <- pat_data |>
+  select(id, gender, healthcare_expenses, healthcare_coverage, income) |>
+  drop_na()
+
+conditions <- con_data |>
+  select(start, stop, patient, code, description) |>
+  drop_na()
+
+medications <- med_data |>
+  select(reasoncode, start, stop, patient, description, base_cost, payer_coverage, dispenses, totalcost, reasondescription) |>
+  drop_na()
+
+conditions <- conditions |>
+  rename(
+    start_con = start,
+    stop_con = stop,
+    description_con = description
+  )
+
+medications <- medications |>
+  rename(
+    start_med = start,
+    stop_med = stop,
+    description_med = description
+  )
+
+conditions$start_con <- as.Date(conditions$start_con)
+conditions$stop_con <- as.Date(conditions$stop_con)
+medications$start_med <- as.Date(medications$start_med)
+medications$stop_med <- as.Date(medications$stop_med)
+
+conditions <- conditions |>
+  filter(code == 10509002)
+
+medications <- medications |>
+  filter(reasoncode == 10509002)
+
+patient_conditions <- conditions |>
+  left_join(patient, by = c("patient" = "id"))
+
+data_linked <- patient_conditions |>
+  inner_join(medications, by = "patient") |>
+  filter(
+    code == reasoncode,
+    start_med == start_con,
+    stop_med == stop_con
+  )
+
+data_linked$income <- as.numeric(data_linked$income)
+data_linked$gender <- factor(data_linked$gender, levels = c("M", "F"))
+
+fwrite(data_linked, "data/data_linked.csv")
+```
+
+## Average medication cost and base cost 
+
+The fisrt question we want to look at is the average medication cost for all individuals that has the condition. We have a total 12 006 individuals that did had the confirmed condition. 
+What is the average medication cost for all individuals with the diagnosis, and what is the total medication cost?
+
+The total and the average cost for the medications are shown below
+
+```{r}
+summary_table_totalcost <- data_linked |>
+  summarise(
+    `Sum of total` = round(sum(totalcost, na.rm = TRUE), 2),
+    `Average total cost` = round(mean(totalcost, na.rm = TRUE), 2),
+    `Average base cost` = round(mean(base_cost, na.rm=TRUE),2)
+
+  )
+
+kable(summary_table_totalcost, caption = "Summary of total medication cost")
+```
+
+## Total medication cost by gender
+
+How much does the total medication cost differ between genders?
+We did a simple visualization and a table summary of some summary statistics. The average cost for male and females are quiet similar but the median cost differ more. 
+A two-samle t-test were peformed to look at the differences in total cost between the genders. The test generated a p-value of p=0.189 so no statistically significant result thattotal medical cost differ by gender were found. 
+Income was devided into 5 groups, which were people with lowst income to the highest, the levels were: Lowest, Low-middle, Middle, High-Middle and Highest. And each person assigned into one of the five categories. 
+A regression model with the Gamma distribution were peformed to look at the the effect that gender and the income has on total medication cost. No significant results were found. The Gamma regression were choosen since the data are right-skewed and heteroscedacity problems handeled. 
+Gamma regression were considered to be appropiate for health economics data. 
+
+```{r}
+ggplot(data_linked, aes(x = gender, y = totalcost)) +
+  geom_boxplot() +
+  labs(
+    title = "Total Medication Cost by Gender",
+    x = "Gender",
+    y = "Total Medication Cost"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+analysis_data <- fread("data/data_linked.csv")
+
+#Creating income quintile
+analysis_data <- analysis_data |>
+  mutate(
+    income_quintile = factor(
+      ntile(income, 5),
+      levels = 1:5,
+      labels = c("Lowest", "Low-Middle", "Middle", "High-Middle", "Highest")
+    )
+  )
+
+#Aggregate to Patient Level
+analysis_data <- analysis_data |>
+  group_by(patient, gender, income_quintile) |>
+  summarise(
+    total_medical_cost = sum(totalcost, na.rm = TRUE),
+    base_cost = sum(base_cost, na.rm = TRUE),
+    payer_coverage = sum(payer_coverage, na.rm = TRUE),
+    n_encounters = n(),
+    .groups = "drop"
+  )
+```
+
+```{r}
+med_cost_summary <- analysis_data |>
+  group_by(gender) |>
+  summarise(
+    avg_med_cost = mean(total_medical_cost, na.rm = TRUE),
+    median_med_cost = median(total_medical_cost, na.rm = TRUE),
+    n_patients = n(),
+    .groups = "drop"
+  )
+
+med_cost_summary |>
+  mutate(
+    avg_med_cost = round(avg_med_cost, 2),
+    median_med_cost = round(median_med_cost, 2)
+  ) |>
+  knitr::kable(
+    col.names = c("Gender", "Average medical cost", "Median medical cost", "Number of patients"),
+    caption = "Table of total medical cost by gender"
+  )
+
+```
+
+```{r}
+#Regression: medication cost as outcome 
+med_cost_model <- glm(
+  total_medical_cost ~ gender + income_quintile, 
+  family = Gamma(link = "log"), 
+  data = analysis_data |> filter(total_medical_cost > 0)
+)
+
+summary(med_cost_model)
+```
+
+```{r}
+model_sum <- summary(med_cost_model)
+model_summary_table <- data.frame(
+  Term= rownames(model_sum$coefficients), 
+  Estimate= model_sum$coefficients[,1], 
+  Std_Error = model_sum$coefficients[,2],
+  z_value = model_sum$coefficients[,3],
+  p_value=model_sum$coefficients[,4]
+)
+
+model_summary_table$Estimate <- round(model_summary_table$Estimate, 3)
+model_summary_table$Std_Error <- round(model_summary_table$Std_Error, 3)
+model_summary_table$z_value <- round(model_summary_table$z_value, 3)
+model_summary_table$p_value <- round(model_summary_table$p_value, 4)
+
+knitr::kable(
+  model_summary_table,
+  col.names = c("Name", "Estimate", "Std. Error", "z value", "p-value"),
+  caption = "Regression model for the effect of gender and income on total cost"
+)
+
+```
+
+## Healthcare expenses across income
+
+The next question that we want to adress is what is the distribution of healthcare expenses across total income? This is relevant since the income is often related to healthcare spendings and how much people can spend on medication. 
+People that has different incomes may have different access to care and may delay some expensive cost. Sine Acute bronchitis is a severe condition if the symptom releving medications are not taken it can lead to other consequences. 
+Below we showing some ditribution of the variables and how we could confirm that the data are right-skewed. 
+
+```{r}
+ggplot(data_linked, aes(x = income, y = healthcare_expenses)) +
+  geom_point() +
+  labs(
+    x = "Income",
+    y = "Healthcare Expenses",
+    title = "Healthcare Expenses vs Income"
+  ) +
+  theme_minimal()
+```
+
+## Distribution of healthcare expenses
+
+```{r}
+ggplot(data_linked, aes(x = healthcare_expenses)) +
+  geom_histogram(bins = 30) +
+  labs(
+    title = "Distribution of Healthcare Expenses for Individuals with Acute Bronchitis",
+    x = "Healthcare Expenses",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Distribution of income
+
+```{r}
+ggplot(data_linked, aes(x = income)) +
+  geom_histogram(bins = 30) +
+  labs(
+    title = "Distribution of Income",
+    x = "Income",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Boxplots
+
+```{r}
+ggplot(data_linked, aes(y = healthcare_expenses)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot of Healthcare Expenses",
+    y = "Healthcare Expenses"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(data_linked, aes(y = income)) +
+  geom_boxplot() +
+  labs(
+    title = "Boxplot of Income",
+    y = "Income"
+  ) +
+  theme_minimal()
+```
+
+## Interpretation
+
+We can observe that both income and healthcare expenses are strongly right skewed. This suggests the presence of high value observations that affect the overall distribution. So most people may have low or moderate values but since some people have very high values or outliers this will create the long-tailed distribution. Income may influence healthcare expenses because differences in income can affect access to care and medication choices. Healthcare expenses may also contribute directly to the total cost of the disease. Overall, the results suggest that income and healthcare expenses may influence the total medication cost for acute bronchitis.
+
+
+## Summary 
+
+This anlysis did aim to examine how the total medical cost for the condition of Acute Bronchits did differ for genders, and also some other subquestions about income and average cost. 
+Total medication cost was summarized by gender and a t-test were peformed. We could not see any statistical significant differences between the genders. 
+Income was also devided into 5 groups this allowed healthcare expenses to be compared across people with different incomes. Regression model for the effect of gender and income were fitted but no results that show any evidence of effect. 
+As a conclussion we could not find any statistically significant differences between the genders or income  for the medication cost of Acute Bronchitis. 
+
+Refrences
+
+1.Wenzel RP. Acute Bronchitis and Tracheitis. Goldman's Cecil Medicine. 2012:586–7. doi: 10.1016/B978-1-4377-1604-7.00096-8. Epub 2012 May 8. PMCID: PMC7151881.
+
+2.Singh A, Avula A, Zahn E. Acute Bronchitis. [Updated 2024 Mar 9]. In: StatPearls [Internet]. Treasure Island (FL): StatPearls Publishing; 2026 Jan-. Available from: https://www.ncbi.nlm.nih.gov/books/NBK448067/
+
+3.World Health Organization (7 January 2025). Disease Outbreak News; Trends of acute respiratory infection, including human metapneumovirus, in the Northern Hemisphere. Available at: https://www.who.int/emergencies/disease-outbreak-news/item/2025-DON550
+
+4.Pritchard D, Petrilla A, Hallinan S, Taylor DH Jr, Schabert VF, Dubois RW. What Contributes Most to High Health Care Costs? Health Care Spending in High Resource Patients. J Manag Care Spec Pharm. 2016 Feb;22(2):102-9. doi: 10.18553/jmcp.2016.22.2.102. PMID: 27015249; PMCID: PMC10397786.
+
+5.Scott RD 2nd, Culler SD, Rask KJ. Understanding the Economic Impact of Health Care-Associated Infections: A Cost Perspective Analysis. J Infus Nurs. 2019 Mar/Apr;42(2):61-69. doi: 10.1097/NAN.0000000000000313. PMID: 30817421; PMCID: PMC12239992.
