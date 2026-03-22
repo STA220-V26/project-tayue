@@ -21,3 +21,11 @@ i have a code suggestion were i do some descriptive data for this which are in T
 I have finshed with codes for Q2 and Q4. See uder Draft_Tayue 
 
 Title suggesion: Healthcare cost burden of acute bronchitis 
+
+
+
+Here I have written the introduction text 
+
+Acute bronchitis is one of the most common respiratory infections, typically caused by viral pathogens, though bacterial etiologies may occur less frequently. It is characterized by inflammation of the bronchial tubes and commonly presents with cough, sputum production, and mild systemic symptoms. Despite its generally self-limiting course, acute bronchitis contributes substantially to the burden on healthcare systems due to its high incidence and frequent healthcare utilization.
+The associated healthcare expenditure represents an important aspect that needs closer attention. In particular, understanding direct medical costs can provide a clearer picture of the economic impact of the condition and help identify inefficiencies in resource use and treatment practices.
+Thus, this study examines the healthcare cost burden of acute bronchitis with a specific focus on medication expenditures and overall baseline healthcare costs among diagnosed individuals. It evaluates the average medication cost per patient and investigates whether these costs differ by gender, thereby highlighting potential disparities in treatment patterns. Additionally, the analysis explores the distribution of total healthcare expenses across income groups, offering insight into socioeconomic inequalities in healthcare utilization and financial burden.
